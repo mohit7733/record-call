@@ -1,9 +1,15 @@
 // models.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-
+function generateShortId() {
+    return Math.random().toString(36).substring(2, 6).toUpperCase();
+}
 // User Schema
 const userSchema = new mongoose.Schema({
+    _id: {
+        type: String,
+        default: generateShortId,
+    },
     username: {
         type: String,
         required: true,
