@@ -1,10 +1,16 @@
-// models.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+
+/* ============================
+   UTIL
+============================ */
 function generateShortId() {
     return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
-// User Schema
+
+/* ============================
+   USER SCHEMA
+============================ */
 const userSchema = new mongoose.Schema({
     _id: {
         type: String,
@@ -31,11 +37,13 @@ const userSchema = new mongoose.Schema({
     },
 });
 
-// Call Schema
+/* ============================
+   CALL SCHEMA 
+============================ */
 const callSchema = new mongoose.Schema({
     employee_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String, 
+        ref: 'RecordingUser',
         required: true,
     },
     phone_number: {
@@ -68,7 +76,36 @@ const callSchema = new mongoose.Schema({
     },
 });
 
-// Hash password before saving
+/* ============================
+   LOCATION SCHEMA 
+============================ */
+const locationSchema = new mongoose.Schema({
+    employee_id: {
+        type: String, 
+        ref: 'RecordingUser',
+        required: true,
+    },
+    latitude: {
+        type: Number,
+        required: true,
+    },
+    longitude: {
+        type: Number,
+        required: true,
+    },
+    timestamp: {
+        type: Date,
+        required: true,
+    },
+    created_at: {
+        type: Date,
+        default: Date.now,
+    },
+});
+
+/* ============================
+   PASSWORD HOOK
+============================ */
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password_hash')) return next();
     try {
@@ -80,12 +117,18 @@ userSchema.pre('save', async function (next) {
     }
 });
 
-// Compare password method
+/* ============================
+   PASSWORD CHECK
+============================ */
 userSchema.methods.comparePassword = async function (password) {
-    return await bcrypt.compare(password, this.password_hash);
+    return bcrypt.compare(password, this.password_hash);
 };
 
+/* ============================
+   MODELS
+============================ */
 const User = mongoose.model('RecordingUser', userSchema);
 const Call = mongoose.model('RecordingCall', callSchema);
+const Location = mongoose.model('RecordingLocation', locationSchema);
 
-module.exports = { User, Call };
+module.exports = { User, Call, Location };
