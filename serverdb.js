@@ -227,6 +227,35 @@ app.post(
 );
 
 /* ============================
+   UPLOAD LOCATION
+============================ */
+app.post("/api/location/upload", authMiddleware, async (req, res) => {
+  try {
+    const { latitude, longitude, timestamp } = req.body;
+
+    if (latitude == null || longitude == null) {
+      return res.status(400).json({ error: "latitude & longitude required" });
+    }
+
+    const location = await Location.create({
+      employee_id: req.user.id, // 🔐 from JWT
+      latitude,
+      longitude,
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+    });
+
+    res.status(201).json({
+      ok: true,
+      location_id: location._id,
+    });
+  } catch (err) {
+    console.error("LOCATION UPLOAD ERROR:", err);
+    res.status(500).json({ error: "location upload failed" });
+  }
+});
+
+
+/* ============================
    FETCH CALLS
 ============================ */
 app.get("/api/calls", authMiddleware, async (req, res) => {
