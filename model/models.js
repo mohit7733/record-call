@@ -11,38 +11,79 @@ function generateShortId() {
 /* ============================
    USER SCHEMA
 ============================ */
+
 const userSchema = new mongoose.Schema({
     _id: {
         type: String,
         default: generateShortId,
     },
+
     username: {
         type: String,
         required: true,
         unique: true,
         trim: true,
     },
+
     password_hash: {
         type: String,
         required: true,
     },
+
     role: {
         type: String,
-        enum: ['admin', 'employee'],
-        default: 'employee',
+        enum: ["admin", "employee"],
+        default: "employee",
     },
+
+    phone_number: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+
+    // 🔐 FORGOT PASSWORD FIELDS
+    reset_otp: String,
+    reset_otp_expiry: Date,
+
     created_at: {
         type: Date,
         default: Date.now,
     },
 });
 
+
+/* ============================
+   PASSWORD HASH HOOK
+============================ */
+
+userSchema.pre("save", async function (next) {
+    // If password not changed, skip hashing
+    if (!this.isModified("password_hash")) return next();
+
+    try {
+        this.password_hash = await bcrypt.hash(this.password_hash, 10);
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
+/* ============================
+   PASSWORD COMPARE METHOD
+============================ */
+
+userSchema.methods.comparePassword = function (plainPassword) {
+    return bcrypt.compare(plainPassword, this.password_hash);
+};
+
+module.exports.User = mongoose.model("User", userSchema);
 /* ============================
    CALL SCHEMA 
 ============================ */
 const callSchema = new mongoose.Schema({
     employee_id: {
-        type: String, 
+        type: String,
         ref: 'RecordingUser',
         required: true,
     },
@@ -70,6 +111,10 @@ const callSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    location: {
+        type: Object,
+        default: null,
+    },
     uploaded_at: {
         type: Date,
         default: Date.now,
@@ -79,29 +124,29 @@ const callSchema = new mongoose.Schema({
 /* ============================
    LOCATION SCHEMA 
 ============================ */
-const locationSchema = new mongoose.Schema({
-    employee_id: {
-        type: String, 
-        ref: 'RecordingUser',
-        required: true,
-    },
-    latitude: {
-        type: Number,
-        required: true,
-    },
-    longitude: {
-        type: Number,
-        required: true,
-    },
-    timestamp: {
-        type: Date,
-        required: true,
-    },
-    created_at: {
-        type: Date,
-        default: Date.now,
-    },
-});
+// const locationSchema = new mongoose.Schema({
+//     employee_id: {
+//         type: String,
+//         ref: 'RecordingUser',
+//         required: true,
+//     },
+//     latitude: {
+//         type: Number,
+//         required: true,
+//     },
+//     longitude: {
+//         type: Number,
+//         required: true,
+//     },
+//     timestamp: {
+//         type: Date,
+//         required: true,
+//     },
+//     created_at: {
+//         type: Date,
+//         default: Date.now,
+//     },
+// });
 
 /* ============================
    PASSWORD HOOK
@@ -129,6 +174,6 @@ userSchema.methods.comparePassword = async function (password) {
 ============================ */
 const User = mongoose.model('RecordingUser', userSchema);
 const Call = mongoose.model('RecordingCall', callSchema);
-const Location = mongoose.model('RecordingLocation', locationSchema);
+// const Location = mongoose.model('RecordingLocation', locationSchema);
 
-module.exports = { User, Call, Location };
+module.exports = { User, Call };
